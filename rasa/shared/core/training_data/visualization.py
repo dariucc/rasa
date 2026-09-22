@@ -310,9 +310,14 @@ def _replace_edge_labels_with_nodes(
 
 
 def visualization_html_path() -> Text:
-    import pkg_resources
+    import importlib.resources
 
-    return pkg_resources.resource_filename(__name__, VISUALIZATION_TEMPLATE_PATH)
+    # lstrip("/") because the template path is defined with a leading slash,
+    # which pathlib would otherwise interpret as an absolute path
+    return str(
+        importlib.resources.files(__package__)
+        / VISUALIZATION_TEMPLATE_PATH.lstrip("/")
+    )
 
 
 def persist_graph(graph: "networkx.Graph", output_file: Text) -> None:

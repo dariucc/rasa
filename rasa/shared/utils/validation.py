@@ -3,7 +3,6 @@ import os
 from typing import Text, Dict, List, Optional, Any
 
 from packaging import version
-from packaging.version import LegacyVersion
 from pykwalify.errors import SchemaError
 
 from ruamel.yaml.constructor import DuplicateKeyError
@@ -131,7 +130,7 @@ def validate_yaml_schema(
     from pykwalify.core import Core
     from pykwalify.errors import SchemaError
     from ruamel.yaml import YAMLError
-    import pkg_resources
+    import importlib.resources
     import logging
 
     log = logging.getLogger("pykwalify")
@@ -149,12 +148,14 @@ def validate_yaml_schema(
     except (YAMLError, DuplicateKeyError) as e:
         raise YamlSyntaxException(underlying_yaml_exception=e)
 
-    schema_file = pkg_resources.resource_filename(package_name, schema_path)
-    schema_utils_file = pkg_resources.resource_filename(
-        PACKAGE_NAME, RESPONSES_SCHEMA_FILE
+    schema_file = str(
+        importlib.resources.files(package_name) / schema_path.lstrip("/")
     )
-    schema_extensions = pkg_resources.resource_filename(
-        PACKAGE_NAME, SCHEMA_EXTENSIONS_FILE
+    schema_utils_file = str(
+        importlib.resources.files(PACKAGE_NAME) / RESPONSES_SCHEMA_FILE.lstrip("/")
+    )
+    schema_extensions = str(
+        importlib.resources.files(PACKAGE_NAME) / SCHEMA_EXTENSIONS_FILE.lstrip("/")
     )
 
     # Load schema content using our YAML loader as `pykwalify` uses a global instance
@@ -249,7 +250,12 @@ def validate_training_data_format_version(
         parsed_version = version.parse(version_value)
         latest_version = version.parse(LATEST_TRAINING_DATA_FORMAT_VERSION)
 
-        if isinstance(parsed_version, LegacyVersion):
+        # LegacyVersion no longer exists in recent versions of packaging.
+        # If parsed_version is not a valid Version object, version.parse will return an object that does not support comparison.
+        # Try to compare, if it fails, handle the exception.
+        try:
+            _ = parsed_version < latest_version
+        except TypeError:
             raise TypeError
 
         if parsed_version < latest_version:

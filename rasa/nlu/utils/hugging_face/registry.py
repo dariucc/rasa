@@ -3,19 +3,24 @@ from typing import Dict, Text, Type
 
 # Explicitly set logging level for this module before any import
 # because otherwise it logs tensorflow/pytorch versions
-logging.getLogger("transformers.file_utils").setLevel(logging.WARNING)
 
-from transformers import (  # noqa: E402
-    TFPreTrainedModel,
-    TFBertModel,
-    TFOpenAIGPTModel,
-    TFGPT2Model,
-    TFXLNetModel,
-    # TFXLMModel,
-    TFDistilBertModel,
-    TFRobertaModel,
-    TFCamembertModel,
-    PreTrainedTokenizer,
+try:
+    logging.getLogger("transformers.utils.logging").setLevel(logging.WARNING)
+except Exception:
+    pass
+
+from transformers import (
+    BertModel,
+    OpenAIGPTModel,
+    GPT2Model,
+    XLNetModel,
+    # XLMModel,
+    DistilBertModel,
+    RobertaModel,
+    CamembertModel,
+)
+from transformers import PreTrainedTokenizer
+from transformers import (
     BertTokenizer,
     OpenAIGPTTokenizer,
     GPT2Tokenizer,
@@ -42,16 +47,16 @@ from rasa.nlu.utils.hugging_face.transformers_pre_post_processors import (  # no
 )
 
 
-model_class_dict: Dict[Text, Type[TFPreTrainedModel]] = {
-    "bert": TFBertModel,
-    "gpt": TFOpenAIGPTModel,
-    "gpt2": TFGPT2Model,
-    "xlnet": TFXLNetModel,
-    # "xlm": TFXLMModel, # Currently doesn't work because of a bug in transformers
+model_class_dict: Dict[Text, Type] = {
+    "bert": BertModel,
+    "gpt": OpenAIGPTModel,
+    "gpt2": GPT2Model,
+    "xlnet": XLNetModel,
+    # "xlm": XLMModel, # Currently doesn't work because of a bug in transformers
     # library https://github.com/huggingface/transformers/issues/2729
-    "distilbert": TFDistilBertModel,
-    "roberta": TFRobertaModel,
-    "camembert": TFCamembertModel,
+    "distilbert": DistilBertModel,
+    "roberta": RobertaModel,
+    "camembert": CamembertModel,
 }
 model_tokenizer_dict: Dict[Text, Type[PreTrainedTokenizer]] = {
     "bert": BertTokenizer,

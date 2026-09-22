@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Text, Tuple, Union, TypeVar, Type
@@ -112,7 +113,10 @@ from rasa.utils.tensorflow.constants import (
     SOFTMAX,
     RUN_EAGERLY,
 )
-TF_USE_LEGACY_KERAS="1"
+# NOTE: this used to be a plain (ineffective) variable assignment.
+# Rasa uses tf_keras directly everywhere; setting the env var is a
+# safety net for any tf.keras access inside TensorFlow itself.
+os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
 
 logger = logging.getLogger(__name__)
 
