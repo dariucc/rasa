@@ -287,7 +287,7 @@ class BotFrameworkInput(InputChannel):
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
         """Defines the Sanic blueprint for the bot framework integration."""
-        botframework_webhook = Blueprint("botframework_webhook", __name__)
+        botframework_webhook = Blueprint("botframework_webhook")
 
         @botframework_webhook.route("/", methods=["GET"])
         async def health(request: Request) -> HTTPResponse:

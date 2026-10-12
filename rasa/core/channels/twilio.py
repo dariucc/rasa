@@ -120,7 +120,7 @@ class TwilioInput(InputChannel):
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
-        twilio_webhook = Blueprint("twilio_webhook", __name__)
+        twilio_webhook = Blueprint("twilio_webhook")
 
         @twilio_webhook.route("/", methods=["GET"])
         async def health(_: Request) -> HTTPResponse:

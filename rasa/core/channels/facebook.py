@@ -352,7 +352,7 @@ class FacebookInput(InputChannel):
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
 
-        fb_webhook = Blueprint("fb_webhook", __name__)
+        fb_webhook = Blueprint("fb_webhook")
 
         # noinspection PyUnusedLocal
         @fb_webhook.route("/", methods=["GET"])

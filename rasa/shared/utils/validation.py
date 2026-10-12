@@ -96,7 +96,8 @@ class YamlValidationException(YamlException, ValueError):
         if not current:
             return None
 
-        this_line = current.lc.line + 1 if hasattr(current, "lc") else None
+        line = getattr(getattr(current, "lc", None), "line", None)
+        this_line = line + 1 if line is not None else None
 
         if not path:
             return this_line

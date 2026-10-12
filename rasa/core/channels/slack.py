@@ -497,7 +497,7 @@ class SlackInput(InputChannel):
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
-        slack_webhook = Blueprint("slack_webhook", __name__)
+        slack_webhook = Blueprint("slack_webhook")
 
         @slack_webhook.route("/", methods=["GET"])
         async def health(_: Request) -> HTTPResponse:

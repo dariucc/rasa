@@ -79,11 +79,11 @@ async def test_load_agent_on_start_with_bad_model_file(
         assert any("No valid model found at" in str(w.message) for w in warnings)
 
 
-async def test_close_resources(loop: AbstractEventLoop):
+async def test_close_resources(event_loop: AbstractEventLoop):
     broker = SQLEventBroker()
     app = Mock()
     app.ctx.agent.tracker_store.event_broker = broker
 
     with warnings.catch_warnings() as record:
-        await run.close_resources(app, loop)
+        await run.close_resources(app, event_loop)
         assert record is None

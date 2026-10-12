@@ -202,7 +202,7 @@ class MattermostInput(InputChannel):
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[None]]
     ) -> Blueprint:
-        mattermost_webhook = Blueprint("mattermost_webhook", __name__)
+        mattermost_webhook = Blueprint("mattermost_webhook")
 
         @mattermost_webhook.route("/", methods=["GET"])
         async def health(_: Request) -> HTTPResponse:

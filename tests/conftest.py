@@ -4,6 +4,7 @@ import copy
 import os
 import random
 import re
+import socket
 import textwrap
 
 import jwt
@@ -21,7 +22,7 @@ from rasa.engine.storage.local_model_storage import LocalModelStorage
 from rasa.engine.storage.storage import ModelStorage
 from sanic.request import Request
 
-from typing import Generator, Iterator, Callable
+from typing import AsyncIterator, Generator, Iterator, Callable
 
 from pathlib import Path
 from sanic import Sanic
@@ -65,6 +66,36 @@ import rasa.utils.io
 # we reuse a bit of pytest's own testing machinery, this should eventually come
 # from a separately installable pytest-cli plugin.
 pytest_plugins = ["pytester"]
+
+
+class LocalSanicServer:
+    """A Sanic app served on a real local port for the duration of a test."""
+
+    def __init__(self, app: Sanic, port: int) -> None:
+        self.app = app
+        self.port = port
+
+    def make_url(self, path: Text) -> Text:
+        return f"http://127.0.0.1:{self.port}{path}"
+
+
+@contextlib.asynccontextmanager
+async def running_sanic_server(app: Sanic) -> AsyncIterator[LocalSanicServer]:
+    """Runs `app` on a free local port until the context manager exits."""
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+
+    server_instance = await app.create_server(
+        host="127.0.0.1", port=port, return_asyncio_server=True
+    )
+    await server_instance.startup()
+    await server_instance.start_serving()
+    try:
+        yield LocalSanicServer(app, port)
+    finally:
+        await server_instance.close()
+        await server_instance.wait_closed()
 
 
 # these tests are run separately

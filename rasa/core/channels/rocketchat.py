@@ -143,7 +143,7 @@ class RocketChatInput(InputChannel):
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
-        rocketchat_webhook = Blueprint("rocketchat_webhook", __name__)
+        rocketchat_webhook = Blueprint("rocketchat_webhook")
 
         @rocketchat_webhook.route("/", methods=["GET"])
         async def health(_: Request) -> HTTPResponse:

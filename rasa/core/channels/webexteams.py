@@ -96,7 +96,7 @@ class WebexTeamsInput(InputChannel):
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
-        webexteams_webhook = Blueprint("webexteams_webhook", __name__)
+        webexteams_webhook = Blueprint("webexteams_webhook")
 
         @webexteams_webhook.route("/", methods=["GET"])
         async def health(_: Request) -> HTTPResponse:

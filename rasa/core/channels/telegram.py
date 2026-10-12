@@ -195,7 +195,7 @@ class TelegramInput(InputChannel):
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
-        telegram_webhook = Blueprint("telegram_webhook", __name__)
+        telegram_webhook = Blueprint("telegram_webhook")
         out_channel = self.get_output_channel()
 
         @telegram_webhook.route("/", methods=["GET"])

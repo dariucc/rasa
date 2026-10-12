@@ -223,7 +223,7 @@ class TwilioVoiceInput(InputChannel):
         self, on_new_message: Callable[[UserMessage], Awaitable[None]]
     ) -> Blueprint:
         """Defines endpoints for Twilio voice channel."""
-        twilio_voice_webhook = Blueprint("Twilio_voice_webhook", __name__)
+        twilio_voice_webhook = Blueprint("Twilio_voice_webhook")
 
         @twilio_voice_webhook.route("/", methods=["GET"])
         async def health(request: Request) -> HTTPResponse:

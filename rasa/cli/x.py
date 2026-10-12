@@ -6,7 +6,6 @@ import signal
 from typing import Iterable, List, Optional, Text, Tuple, Union
 
 import aiohttp
-import ruamel.yaml as yaml
 
 from rasa.cli import SubParsersAction
 from rasa.cli.arguments import x as arguments
@@ -100,7 +99,9 @@ def _prepare_credentials_for_rasa_x(
     # this makes sure the Rasa X is properly configured no matter what
     if rasa_x_url:
         credentials["rasa"] = {"url": rasa_x_url}
-    dumped_credentials = yaml.dump(credentials, default_flow_style=False)
+    dumped_credentials = rasa.shared.utils.io.dump_obj_as_yaml_to_string(
+        credentials, should_preserve_key_order=True
+    )
     tmp_credentials = rasa.utils.io.create_temporary_file(dumped_credentials, "yml")
 
     return tmp_credentials

@@ -17,7 +17,13 @@ import portalocker
 
 from ruamel import yaml as yaml
 from ruamel.yaml import RoundTripRepresenter, YAMLError
-from ruamel.yaml.constructor import DuplicateKeyError, BaseConstructor, ScalarNode
+from ruamel.yaml.constructor import (
+    BaseConstructor,
+    ConstructorError,
+    DuplicateKeyError,
+    RoundTripConstructor,
+    ScalarNode,
+)
 
 from rasa.shared.constants import (
     DEFAULT_LOG_LEVEL,
@@ -330,8 +336,28 @@ def replace_environment_variables() -> None:
     yaml.SafeConstructor.add_constructor("!env_var", env_var_constructor)
 
 
+def reject_unknown_yaml_tags() -> None:
+    """Keeps an unknown YAML tag a syntax error.
+
+    Since ruamel 0.18 the round-trip constructor preserves unknown tags as a
+    `TaggedScalar` instead of raising, which lets malformed YAML reach schema
+    validation and produce a misleading error.
+    """
+
+    def construct_unknown(self: BaseConstructor, node: Any) -> Any:
+        raise ConstructorError(
+            None,
+            None,
+            f"could not determine a constructor for the tag '{node.tag}'",
+            node.start_mark,
+        )
+
+    RoundTripConstructor.add_constructor(None, construct_unknown)
+
+
 fix_yaml_loader()
 replace_environment_variables()
+reject_unknown_yaml_tags()
 
 
 def read_yaml(content: Text, reader_type: Union[Text, List[Text]] = "safe") -> Any:

@@ -194,7 +194,7 @@ class SocketIOInput(InputChannel):
         # https://github.com/miguelgrinberg/python-socketio/issues/205#issuecomment-493769183
         sio = AsyncServer(async_mode="sanic", cors_allowed_origins=[])
         socketio_webhook = SocketBlueprint(
-            sio, self.socketio_path, "socketio_webhook", __name__
+            sio, self.socketio_path, "socketio_webhook"
         )
 
         # make sio object static to use in get_output_channel

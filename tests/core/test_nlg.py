@@ -1,5 +1,5 @@
 import uuid
-from typing import Text, Any
+from typing import AsyncIterator, Text, Any
 
 import jsonschema
 import pytest
@@ -9,6 +9,7 @@ from rasa.core.nlg.callback import CallbackNaturalLanguageGenerator
 from rasa.core.nlg.response import TemplatedNaturalLanguageGenerator
 from rasa.utils.endpoints import EndpointConfig, read_endpoint_config
 from rasa.core.agent import Agent
+from tests.conftest import LocalSanicServer, running_sanic_server
 
 
 def nlg_app(base_url="/"):
@@ -59,11 +60,12 @@ def nlg_app(base_url="/"):
 
 # noinspection PyShadowingNames
 @pytest.fixture()
-def http_nlg(loop, sanic_client):
-    return loop.run_until_complete(sanic_client(nlg_app()))
+async def http_nlg() -> AsyncIterator[LocalSanicServer]:
+    async with running_sanic_server(nlg_app()) as server:
+        yield server
 
 
-async def test_nlg(http_nlg, trained_rasa_model: Text):
+async def test_nlg(http_nlg: LocalSanicServer, trained_rasa_model: Text):
     sender = str(uuid.uuid1())
 
     nlg_endpoint = EndpointConfig.from_dict({"url": http_nlg.make_url("/")})

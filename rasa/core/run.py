@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import multiprocessing
 import uuid
 import platform
 import os
@@ -23,7 +24,11 @@ import rasa.utils
 import rasa.utils.common
 import rasa.utils.io
 from rasa import server, telemetry
-from rasa.constants import ENV_SANIC_BACKLOG
+from rasa.constants import (
+    DEFAULT_SANIC_WORKER_STARTUP_TIMEOUT,
+    ENV_SANIC_BACKLOG,
+    ENV_SANIC_WORKER_STARTUP_TIMEOUT,
+)
 from rasa.core import agent, channels, constants
 from rasa.core.agent import Agent
 from rasa.core.channels import console
@@ -31,6 +36,7 @@ from rasa.core.channels.channel import InputChannel
 from rasa.core.utils import AvailableEndpoints
 import rasa.shared.utils.io
 from sanic import Sanic
+from sanic.worker.manager import WorkerManager
 from asyncio import AbstractEventLoop
 
 
@@ -184,6 +190,32 @@ def configure_app(
     return app
 
 
+def _configure_sanic_start_method() -> None:
+    current_start_method = multiprocessing.get_start_method(allow_none=True)
+    if current_start_method is None and (
+        "fork" in multiprocessing.get_all_start_methods()
+    ):
+        current_start_method = "fork"
+
+    if current_start_method and current_start_method != Sanic.start_method:
+        logger.debug(
+            f"Using multiprocessing start method '{current_start_method}' for the "
+            f"Sanic server instead of '{Sanic.start_method}'."
+        )
+        Sanic.start_method = current_start_method
+
+
+def _configure_worker_startup_timeout() -> None:
+    """Give workers enough time to load the model before Sanic shuts them down."""
+    timeout_in_seconds = float(
+        os.environ.get(
+            ENV_SANIC_WORKER_STARTUP_TIMEOUT, DEFAULT_SANIC_WORKER_STARTUP_TIMEOUT
+        )
+    )
+    # Sanic counts the threshold in tenths of a second.
+    WorkerManager.THRESHOLD = int(timeout_in_seconds * 10)
+
+
 def serve_application(
     model_path: Optional[Text] = None,
     channel: Optional[Text] = None,
@@ -264,6 +296,9 @@ def serve_application(
     rasa.utils.common.update_sanic_log_level(
         log_file, use_syslog, syslog_address, syslog_port, syslog_protocol
     )
+
+    _configure_sanic_start_method()
+    _configure_worker_startup_timeout()
 
     app.run(
         host=interface,

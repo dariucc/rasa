@@ -2,14 +2,13 @@ import asyncio
 from http import HTTPStatus
 import json
 from pathlib import Path
-from typing import Any, Dict, Text, Callable, Optional
+from typing import Any, AsyncIterator, Dict, Text, Callable, Optional
 from unittest.mock import patch
 import uuid
 
 from aioresponses import aioresponses
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from pytest_sanic.utils import TestClient
 from sanic import Sanic, response
 from sanic.request import Request
 from sanic.response import ResponseStream
@@ -35,7 +34,12 @@ from rasa.core.channels.channel import UserMessage
 from rasa.shared.core.domain import Domain
 from rasa.shared.constants import INTENT_MESSAGE_PREFIX
 from rasa.utils.endpoints import EndpointConfig
-from tests.conftest import with_assistant_ids, with_model_ids
+from tests.conftest import (
+    LocalSanicServer,
+    running_sanic_server,
+    with_assistant_ids,
+    with_model_ids,
+)
 
 
 def model_server_app(model_path: Text, model_hash: Text = "somehash") -> Sanic:
@@ -61,11 +65,10 @@ def model_server_app(model_path: Text, model_hash: Text = "somehash") -> Sanic:
 
 
 @pytest.fixture()
-def model_server(
-    loop: asyncio.AbstractEventLoop, sanic_client: Callable, trained_rasa_model: Text
-) -> TestClient:
+async def model_server(trained_rasa_model: Text) -> AsyncIterator[LocalSanicServer]:
     app = model_server_app(trained_rasa_model, model_hash="somehash")
-    return loop.run_until_complete(sanic_client(app))
+    async with running_sanic_server(app) as server:
+        yield server
 
 
 async def test_agent_train(default_agent: Agent):
@@ -139,7 +142,7 @@ async def test_agent_wrong_use_of_load():
 
 
 async def test_agent_with_model_server_in_thread(
-    model_server: TestClient, domain: Domain
+    model_server: LocalSanicServer, domain: Domain
 ):
     model_endpoint_config = EndpointConfig.from_dict(
         {"url": model_server.make_url("/model"), "wait_time_between_pulls": 2}
@@ -161,7 +164,7 @@ async def test_agent_with_model_server_in_thread(
 
 
 async def test_wait_time_between_pulls_without_interval(
-    model_server: TestClient, monkeypatch: MonkeyPatch
+    model_server: LocalSanicServer, monkeypatch: MonkeyPatch
 ):
     monkeypatch.setattr(
         "rasa.core.agent._schedule_model_pulling", lambda *args: 1 / 0

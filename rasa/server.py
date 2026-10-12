@@ -502,6 +502,27 @@ async def _load_agent(
     return loaded_agent
 
 
+def _end_anchor_cors_origin(origin: Text) -> Text:
+    """Anchors a CORS origin pattern so it cannot be matched as a prefix.
+
+    `sanic-cors` matches regex-like origins with `re.match` and no trailing
+    anchor (CVE-2026-37737), so `https://example.com` would also allow
+    `https://example.com.attacker.tld`. There is no fixed release, hence the
+    patterns are anchored here.
+    """
+    if not isinstance(origin, str) or origin == "*":
+        return origin
+
+    # `sanic-cors` compares anything without these characters verbatim.
+    if not any(char in origin for char in ("*", "\\", "]", "?")):
+        return origin
+
+    if origin.endswith(("$", r"\Z")):
+        return origin
+
+    return f"(?:{origin})\\Z"
+
+
 def configure_cors(
     app: Sanic, cors_origins: Union[Text, List[Text], None] = ""
 ) -> None:
@@ -512,9 +533,13 @@ def configure_cors(
     app.config.CORS_SUPPORTS_CREDENTIALS = True
     app.config.CORS_EXPOSE_HEADERS = "filename"
 
-    CORS(
-        app, resources={r"/*": {"origins": cors_origins or ""}}, automatic_options=True
-    )
+    origins: Union[Text, List[Text]] = cors_origins or ""
+    if isinstance(origins, str):
+        origins = _end_anchor_cors_origin(origins)
+    else:
+        origins = [_end_anchor_cors_origin(origin) for origin in origins]
+
+    CORS(app, resources={r"/*": {"origins": origins}}, automatic_options=True)
 
 
 def add_root_route(app: Sanic) -> None:
@@ -678,8 +703,12 @@ def create_app(
 
     app.ctx.agent = agent
     # Initialize shared object of type unsigned int for tracking
-    # the number of active training processes
-    app.ctx.active_training_processes = multiprocessing.Value("I", 0)
+    # the number of active training processes.
+    # An explicit context is used so that the global default start method stays
+    # unset, otherwise Sanic fails to start its workers with 'spawn'.
+    app.ctx.active_training_processes = multiprocessing.get_context("spawn").Value(
+        "I", 0
+    )
 
     @app.exception(ErrorResponse)
     async def handle_error_response(

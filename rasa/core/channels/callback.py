@@ -61,7 +61,7 @@ class CallbackInput(RestInput):
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
-        callback_webhook = Blueprint("callback_webhook", __name__)
+        callback_webhook = Blueprint("callback_webhook")
 
         @callback_webhook.route("/", methods=["GET"])
         async def health(_: Request) -> HTTPResponse:
